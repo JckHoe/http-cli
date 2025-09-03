@@ -1,0 +1,34 @@
+### GitHub API Examples
+# Requires authentication token in environment variable GITHUB_TOKEN
+
+@baseUrl = https://api.github.com
+
+### Get user info
+GET {{baseUrl}}/user
+Authorization: Bearer {{GITHUB_TOKEN}}
+
+###
+
+### List user repos
+GET {{baseUrl}}/user/repos
+Authorization: Bearer {{GITHUB_TOKEN}}
+
+###
+
+### Get specific repo
+GET {{baseUrl}}/repos/charmbracelet/bubbletea
+
+###
+
+### Search repositories
+GET {{baseUrl}}/search/repositories?q=language:go+stars:>1000&sort=stars&order=desc
+
+###
+
+### Get rate limit status
+GET {{baseUrl}}/rate_limit
+
+###
+
+### Get GitHub status
+GET https://www.githubstatus.com/api/v2/status.json

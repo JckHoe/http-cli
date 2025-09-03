@@ -1,0 +1,52 @@
+### Get all users
+GET https://jsonplaceholder.typicode.com/users
+
+###
+
+### Get single user
+GET https://jsonplaceholder.typicode.com/users/1
+
+###
+
+### Get posts for user
+GET https://jsonplaceholder.typicode.com/posts?userId=1
+
+###
+
+### Create new post
+POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+
+{
+  "title": "Test Post",
+  "body": "This is a test post created with Cassie CLI",
+  "userId": 1
+}
+
+###
+
+### Update post
+PUT https://jsonplaceholder.typicode.com/posts/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "title": "Updated Post",
+  "body": "This post has been updated",
+  "userId": 1
+}
+
+###
+
+### Delete post
+DELETE https://jsonplaceholder.typicode.com/posts/1
+
+###
+
+### Get comments for post
+GET https://jsonplaceholder.typicode.com/posts/1/comments
+
+###
+
+### Search posts
+GET https://jsonplaceholder.typicode.com/posts?title=qui%20est%20esse
