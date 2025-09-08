@@ -1,4 +1,4 @@
-.PHONY: build run test clean install
+.PHONY: build run test clean install tui example lint lint-fix fmt
 
 BINARY_NAME=cassie
 MAIN_PATH=cmd/cassie/main.go
@@ -24,3 +24,27 @@ tui: build
 
 example: build
 	./$(BINARY_NAME) run examples/sample.http --request 1
+
+lint:
+	@echo "Running golangci-lint..."
+	@if command -v golangci-lint &> /dev/null; then \
+		golangci-lint run --timeout=5m; \
+	else \
+		echo "golangci-lint not installed. Installing..."; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		golangci-lint run --timeout=5m; \
+	fi
+
+lint-fix:
+	@echo "Running golangci-lint with auto-fix..."
+	@if command -v golangci-lint &> /dev/null; then \
+		golangci-lint run --fix --timeout=5m; \
+	else \
+		echo "golangci-lint not installed. Installing..."; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		golangci-lint run --fix --timeout=5m; \
+	fi
+
+fmt:
+	go fmt ./...
+	go mod tidy

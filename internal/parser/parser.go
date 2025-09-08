@@ -19,7 +19,9 @@ func ParseFile(path string) (*HTTPFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	httpFile := &HTTPFile{
 		Path:      path,
@@ -149,12 +151,16 @@ func ParseString(content string) (*HTTPFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
 
 	if _, err := tmpFile.WriteString(content); err != nil {
 		return nil, err
 	}
-	tmpFile.Close()
+	if err := tmpFile.Close(); err != nil {
+		return nil, err
+	}
 
 	return ParseFile(tmpFile.Name())
 }
