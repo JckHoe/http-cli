@@ -19,7 +19,7 @@ Content-Type: application/json
 
 {
   "title": "Test Post",
-  "body": "This is a test post created with Cassie CLI",
+  "body": "This is a test post created with httpx",
   "userId": 1
 }
 

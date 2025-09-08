@@ -1,6 +1,6 @@
 " Vim filetype plugin for HTTP files
 " Language: HTTP
-" Maintainer: Cassie HTTP Plugin
+" Maintainer: httpx Plugin
 
 if exists("b:did_ftplugin")
   finish

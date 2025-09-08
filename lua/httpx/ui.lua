@@ -17,7 +17,7 @@ local function create_floating_window(title)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
   vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
-  vim.api.nvim_buf_set_option(buf, "filetype", "cassie-http-response")
+  vim.api.nvim_buf_set_option(buf, "filetype", "httpx-response")
   
   local win_opts = {
     relative = "editor",

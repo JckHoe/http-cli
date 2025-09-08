@@ -41,7 +41,7 @@ local function format_request(request)
 end
 
 local function format_all_requests(requests)
-  local parser = require("cassie-http.parser")
+  local parser = require("httpx.parser")
   local variables = parser.get_variables()
   local lines = {}
   
@@ -122,7 +122,7 @@ function M.run_request(request, callback)
   end
   
   local cmd = {
-    config.binary_path or "cassie",
+    config.binary_path or "httpx",
     "run",
     tmpfile,
     "--request", "1",
@@ -179,7 +179,7 @@ function M.run_all_requests(requests, callback)
   end
   
   local cmd = {
-    config.binary_path or "cassie",
+    config.binary_path or "httpx",
     "test",
     tmpfile,
   }

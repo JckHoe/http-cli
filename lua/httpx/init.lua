@@ -1,7 +1,7 @@
 local M = {}
 
 M.config = {
-  binary_path = "cassie",
+  binary_path = "httpx",
   timeout = 30,
   response_window = {
     width = 0.8,
@@ -19,9 +19,9 @@ M.config = {
 function M.setup(opts)
   M.config = vim.tbl_deep_extend("force", M.config, opts or {})
   
-  local parser = require("cassie-http.parser")
-  local executor = require("cassie-http.executor")
-  local ui = require("cassie-http.ui")
+  local parser = require("httpx.parser")
+  local executor = require("httpx.executor")
+  local ui = require("httpx.ui")
   
   executor.setup(M.config)
   ui.setup(M.config)
@@ -71,10 +71,10 @@ function M.setup(opts)
     end)
   end
   
-  vim.api.nvim_create_user_command("CassieRunRequest", run_request_under_cursor, {})
-  vim.api.nvim_create_user_command("CassieRunAll", run_all_requests, {})
-  vim.api.nvim_create_user_command("CassieShowVariables", show_variables, {})
-  vim.api.nvim_create_user_command("CassieSelectRequest", select_and_run_request, {})
+  vim.api.nvim_create_user_command("HttpxRunRequest", run_request_under_cursor, {})
+  vim.api.nvim_create_user_command("HttpxRunAll", run_all_requests, {})
+  vim.api.nvim_create_user_command("HttpxShowVariables", show_variables, {})
+  vim.api.nvim_create_user_command("HttpxSelectRequest", select_and_run_request, {})
   
   vim.api.nvim_create_autocmd("FileType", {
     pattern = "http",
