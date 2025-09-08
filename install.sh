@@ -3,7 +3,7 @@
 set -e
 
 # Configuration
-REPO="cassielabs/httpx"
+REPO="JckHoe/http-cli"
 BINARY_NAME="httpx"
 INSTALL_DIR="${HTTPX_INSTALL_DIR:-/usr/local/bin}"
 GITHUB_API="https://api.github.com"
