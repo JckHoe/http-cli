@@ -27,15 +27,15 @@ jobs:
       - name: Build binaries
         run: |
           # Build for macOS ARM64
-          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" -o cassie-darwin-arm64 cmd/cassie/main.go
+          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" -o httpx-darwin-arm64 cmd/httpx/main.go
           
           # Build for Linux AMD64
-          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" -o cassie-linux-amd64 cmd/cassie/main.go
+          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" -o httpx-linux-amd64 cmd/httpx/main.go
 
       - name: Generate checksums
         run: |
-          sha256sum cassie-darwin-arm64 > cassie-darwin-arm64.sha256
-          sha256sum cassie-linux-amd64 > cassie-linux-amd64.sha256
+          sha256sum httpx-darwin-arm64 > httpx-darwin-arm64.sha256
+          sha256sum httpx-linux-amd64 > httpx-linux-amd64.sha256
 
       - name: Create Release
         id: create_release
@@ -52,12 +52,12 @@ jobs:
             
             ### Quick Install (Unix-like systems)
             ```bash
-            curl -fsSL https://raw.githubusercontent.com/cassielabs/cassie-cli/main/install.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/httpxlabs/httpx-cli/main/install.sh | bash
             ```
             
             ### Manual Download
-            - [macOS ARM64](https://github.com/cassielabs/cassie-cli/releases/download/${{ steps.version.outputs.VERSION }}/cassie-darwin-arm64)
-            - [Linux AMD64](https://github.com/cassielabs/cassie-cli/releases/download/${{ steps.version.outputs.VERSION }}/cassie-linux-amd64)
+            - [macOS ARM64](https://github.com/httpxlabs/httpx-cli/releases/download/${{ steps.version.outputs.VERSION }}/httpx-darwin-arm64)
+            - [Linux AMD64](https://github.com/httpxlabs/httpx-cli/releases/download/${{ steps.version.outputs.VERSION }}/httpx-linux-amd64)
             
             ### Checksums
             Download the corresponding `.sha256` file to verify integrity.
@@ -68,8 +68,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./cassie-darwin-arm64
-          asset_name: cassie-darwin-arm64
+          asset_path: ./httpx-darwin-arm64
+          asset_name: httpx-darwin-arm64
           asset_content_type: application/octet-stream
 
       - name: Upload macOS ARM64 checksum
@@ -78,8 +78,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./cassie-darwin-arm64.sha256
-          asset_name: cassie-darwin-arm64.sha256
+          asset_path: ./httpx-darwin-arm64.sha256
+          asset_name: httpx-darwin-arm64.sha256
           asset_content_type: text/plain
 
       - name: Upload Linux AMD64 binary
@@ -88,8 +88,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./cassie-linux-amd64
-          asset_name: cassie-linux-amd64
+          asset_path: ./httpx-linux-amd64
+          asset_name: httpx-linux-amd64
           asset_content_type: application/octet-stream
 
       - name: Upload Linux AMD64 checksum
@@ -98,6 +98,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./cassie-linux-amd64.sha256
-          asset_name: cassie-linux-amd64.sha256
+          asset_path: ./httpx-linux-amd64.sha256
+          asset_name: httpx-linux-amd64.sha256
           asset_content_type: text/plain

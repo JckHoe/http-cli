@@ -3,9 +3,9 @@
 set -e
 
 # Configuration
-REPO="cassielabs/cassie-cli"
-BINARY_NAME="cassie"
-INSTALL_DIR="${CASSIE_INSTALL_DIR:-/usr/local/bin}"
+REPO="cassielabs/httpx"
+BINARY_NAME="httpx"
+INSTALL_DIR="${HTTPX_INSTALL_DIR:-/usr/local/bin}"
 GITHUB_API="https://api.github.com"
 
 # Colors for output
@@ -200,7 +200,7 @@ prompt_update() {
 
 show_usage() {
     cat << EOF
-Cassie CLI Installer
+httpx Installer
 
 Usage: $0 [OPTIONS]
 
@@ -260,7 +260,7 @@ main() {
     
     echo ""
     echo "========================================="
-    echo "     Cassie CLI Installer"
+    echo "     httpx Installer"
     echo "========================================="
     echo ""
     

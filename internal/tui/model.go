@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cassielabs/cassie-cli/internal/executor"
-	"github.com/cassielabs/cassie-cli/internal/parser"
+	"github.com/cassielabs/httpx/internal/executor"
+	"github.com/cassielabs/httpx/internal/parser"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"

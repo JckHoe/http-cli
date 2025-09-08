@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cassielabs/cassie-cli/internal/executor"
-	"github.com/cassielabs/cassie-cli/internal/parser"
+	"github.com/cassielabs/httpx/internal/executor"
+	"github.com/cassielabs/httpx/internal/parser"
 )
 
 func RunTests(filePath string, timeout time.Duration) error {

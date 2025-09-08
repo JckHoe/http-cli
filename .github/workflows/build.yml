@@ -33,7 +33,7 @@ jobs:
         run: make build
 
       - name: Verify build
-        run: ./cassie --version || ./cassie --help || true
+        run: ./httpx --version || ./httpx --help || true
 
   lint:
     runs-on: ubuntu-latest

@@ -1,7 +1,7 @@
 .PHONY: build run test clean install tui example lint lint-fix fmt
 
-BINARY_NAME=cassie
-MAIN_PATH=cmd/cassie/main.go
+BINARY_NAME=httpx
+MAIN_PATH=cmd/httpx/main.go
 
 build:
 	go build -o $(BINARY_NAME) $(MAIN_PATH)
