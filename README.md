@@ -1,7 +1,7 @@
 # httpx
 
-[![Build and Test](https://github.com/cassielabs/httpx/actions/workflows/build.yml/badge.svg)](https://github.com/cassielabs/httpx/actions/workflows/build.yml)
-[![Release](https://github.com/cassielabs/httpx/actions/workflows/release.yml/badge.svg)](https://github.com/cassielabs/httpx/actions/workflows/release.yml)
+[![Build and Test](https://github.com/JckHoe/http-cli/actions/workflows/build.yml/badge.svg)](https://github.com/JckHoe/http-cli/actions/workflows/build.yml)
+[![Release](https://github.com/JckHoe/http-cli/actions/workflows/release.yml/badge.svg)](https://github.com/JckHoe/http-cli/actions/workflows/release.yml)
 
 A powerful HTTP file runner CLI tool with an interactive TUI interface.
 
@@ -12,32 +12,32 @@ A powerful HTTP file runner CLI tool with an interactive TUI interface.
 Install or update to the latest version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cassielabs/httpx/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/JckHoe/http-cli/main/install.sh | bash
 ```
 
 ### Installation Options
 
 ```bash
 # Force update without prompts
-curl -fsSL https://raw.githubusercontent.com/cassielabs/httpx/main/install.sh | bash -s -- --force
+curl -fsSL https://raw.githubusercontent.com/JckHoe/http-cli/main/install.sh | bash -s -- --force
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/cassielabs/httpx/main/install.sh | bash -s -- --version v1.0.0
+curl -fsSL https://raw.githubusercontent.com/JckHoe/http-cli/main/install.sh | bash -s -- --version v1.0.0
 
 # Install to custom directory
-curl -fsSL https://raw.githubusercontent.com/cassielabs/httpx/main/install.sh | bash -s -- --dir ~/bin
+curl -fsSL https://raw.githubusercontent.com/JckHoe/http-cli/main/install.sh | bash -s -- --dir ~/bin
 ```
 
 ### Manual Installation
 
-Download the appropriate binary for your system from the [releases page](https://github.com/cassielabs/httpx/releases):
+Download the appropriate binary for your system from the [releases page](https://github.com/JckHoe/http-cli/releases):
 
 - **macOS (ARM64)**: `httpx-darwin-arm64`
 - **Linux (AMD64)**: `httpx-linux-amd64`
 
 ```bash
 # Example for macOS ARM64
-curl -L https://github.com/cassielabs/httpx/releases/latest/download/httpx-darwin-arm64 -o httpx
+curl -L https://github.com/JckHoe/http-cli/releases/latest/download/httpx-darwin-arm64 -o httpx
 chmod +x httpx
 sudo mv httpx /usr/local/bin/
 ```
@@ -45,8 +45,8 @@ sudo mv httpx /usr/local/bin/
 ### Build from Source
 
 ```bash
-git clone https://github.com/cassielabs/httpx.git
-cd httpx
+git clone https://github.com/JckHoe/http-cli.git
+cd http-cli
 make build
 sudo make install
 ```
@@ -70,7 +70,7 @@ httpx run examples/sample.http --request 1
 The installer script automatically checks for updates:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cassielabs/httpx/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/JckHoe/http-cli/main/install.sh | bash
 ```
 
 If an update is available, you'll be prompted to install it. Use `--force` to skip the prompt.
