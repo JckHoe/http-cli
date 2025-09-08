@@ -50,7 +50,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          args: --version
+          install-mode: binary
 
       - name: Run linting
         run: make lint
