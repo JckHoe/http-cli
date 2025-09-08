@@ -63,7 +63,7 @@ func RunTests(filePath string, timeout time.Duration) error {
 		}
 	}
 
-	fmt.Printf("\n" + strings.Repeat("-", 50) + "\n")
+	fmt.Print("\n" + strings.Repeat("-", 50) + "\n")
 	fmt.Printf("Test Results: %d/%d passed", passed, totalTests)
 	
 	if failed > 0 {

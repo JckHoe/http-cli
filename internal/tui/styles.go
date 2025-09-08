@@ -26,20 +26,9 @@ var (
 		BorderForeground(lipgloss.Color("63")).
 		Padding(1, 2)
 
-	statusSuccessStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("42")).
-		Bold(true)
-
 	statusErrorStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("196")).
 		Bold(true)
-
-	headerKeyStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("99")).
-		Bold(true)
-
-	headerValueStyle = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("252"))
 
 	helpStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("241")).

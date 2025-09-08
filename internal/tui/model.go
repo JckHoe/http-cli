@@ -96,7 +96,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.requestIndex--
 				}
 			case stateResponse:
-				m.viewport.LineUp(1)
+				m.viewport.ScrollUp(1)
 			}
 
 		case key.Matches(msg, keys.Down):
@@ -110,7 +110,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.requestIndex++
 				}
 			case stateResponse:
-				m.viewport.LineDown(1)
+				m.viewport.ScrollDown(1)
 			}
 
 		case key.Matches(msg, keys.Enter):
