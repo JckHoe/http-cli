@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build binaries
+        run: |
+          # Build for macOS ARM64
+          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" -o cassie-darwin-arm64 cmd/cassie/main.go
+          
+          # Build for Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=${{ steps.version.outputs.VERSION }}" -o cassie-linux-amd64 cmd/cassie/main.go
+
+      - name: Generate checksums
+        run: |
+          sha256sum cassie-darwin-arm64 > cassie-darwin-arm64.sha256
+          sha256sum cassie-linux-amd64 > cassie-linux-amd64.sha256
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          body: |
+            ## Installation
+            
+            ### Quick Install (Unix-like systems)
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/cassielabs/cassie-cli/main/install.sh | bash
+            ```
+            
+            ### Manual Download
+            - [macOS ARM64](https://github.com/cassielabs/cassie-cli/releases/download/${{ steps.version.outputs.VERSION }}/cassie-darwin-arm64)
+            - [Linux AMD64](https://github.com/cassielabs/cassie-cli/releases/download/${{ steps.version.outputs.VERSION }}/cassie-linux-amd64)
+            
+            ### Checksums
+            Download the corresponding `.sha256` file to verify integrity.
+
+      - name: Upload macOS ARM64 binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./cassie-darwin-arm64
+          asset_name: cassie-darwin-arm64
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS ARM64 checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./cassie-darwin-arm64.sha256
+          asset_name: cassie-darwin-arm64.sha256
+          asset_content_type: text/plain
+
+      - name: Upload Linux AMD64 binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./cassie-linux-amd64
+          asset_name: cassie-linux-amd64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Linux AMD64 checksum
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./cassie-linux-amd64.sha256
+          asset_name: cassie-linux-amd64.sha256
+          asset_content_type: text/plain
