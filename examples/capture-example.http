@@ -1,0 +1,53 @@
+### Example: Capture and use variables from JSON responses
+
+### Step 1: Create a user and capture the ID
+# @capture userId=id
+# @capture userName=name
+POST https://jsonplaceholder.typicode.com/users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "username": "johndoe",
+  "email": "john@example.com"
+}
+
+###
+
+### Step 2: Create a post using the captured userId
+# @capture postId=id
+POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+
+{
+  "title": "My First Post",
+  "body": "This is a post by {{userName}}",
+  "userId": {{userId}}
+}
+
+###
+
+### Step 3: Get user details and capture nested fields
+# @capture userEmail=email
+# @capture userCity=address.city
+# @capture userCompany=company.name
+GET https://jsonplaceholder.typicode.com/users/1
+
+###
+
+### Step 4: Use all captured variables in a complex request
+POST https://jsonplaceholder.typicode.com/posts
+Content-Type: application/json
+
+{
+  "title": "Post from {{userCity}}",
+  "body": "Author: {{userName}} ({{userEmail}}) works at {{userCompany}}",
+  "userId": {{userId}}
+}
+
+###
+
+### Example: Capture from arrays
+# @capture firstPostId=0.id
+# @capture firstPostTitle=0.title
+GET https://jsonplaceholder.typicode.com/posts?userId=1
