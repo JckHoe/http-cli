@@ -59,6 +59,11 @@ func ParseFile(path string) (*HTTPFile, error) {
 			continue
 		}
 
+		if inBody {
+			bodyLines = append(bodyLines, line)
+			continue
+		}
+
 		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
 			if currentRequest != nil && currentRequest.Method == "" {
 				comment := strings.TrimSpace(line)
@@ -91,11 +96,6 @@ func ParseFile(path string) (*HTTPFile, error) {
 			}
 		}
 
-		if inBody {
-			bodyLines = append(bodyLines, line)
-			continue
-		}
-
 		if requestLineRegex.MatchString(line) {
 			matches := requestLineRegex.FindStringSubmatch(line)
 			currentRequest.Method = matches[1]
@@ -107,12 +107,27 @@ func ParseFile(path string) (*HTTPFile, error) {
 			continue
 		}
 
+		if strings.HasPrefix(strings.TrimSpace(line), "HTTP/") {
+			continue
+		}
+
+		trimmedLine := strings.TrimSpace(line)
 		if strings.Contains(line, ":") && currentRequest.Method != "" {
+			if strings.HasPrefix(trimmedLine, "{") || strings.HasPrefix(trimmedLine, "[") || strings.HasPrefix(trimmedLine, "<") {
+				inBody = true
+				bodyLines = append(bodyLines, line)
+				continue
+			}
 			parts := strings.SplitN(line, ":", 2)
 			if len(parts) == 2 {
 				headerName := strings.TrimSpace(parts[0])
 				headerValue := strings.TrimSpace(parts[1])
-				currentRequest.Headers.Add(headerName, headerValue)
+				if headerName != "" && !strings.ContainsAny(headerName, " \t\"{}<>[]") {
+					currentRequest.Headers.Add(headerName, headerValue)
+				} else {
+					inBody = true
+					bodyLines = append(bodyLines, line)
+				}
 			}
 			continue
 		}
@@ -129,6 +144,12 @@ func ParseFile(path string) (*HTTPFile, error) {
 				currentRequest.Description = strings.Join(descriptionLines, " ")
 				descriptionLines = []string{}
 			}
+			continue
+		}
+
+		if currentRequest.Method != "" {
+			inBody = true
+			bodyLines = append(bodyLines, line)
 			continue
 		}
 	}
