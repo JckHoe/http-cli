@@ -1,4 +1,4 @@
-module github.com/cassielabs/httpx
+module github.com/cassielabs/hrun
 
 go 1.24.4
 

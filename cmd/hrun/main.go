@@ -5,10 +5,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/cassielabs/httpx/internal/executor"
-	"github.com/cassielabs/httpx/internal/parser"
-	"github.com/cassielabs/httpx/internal/runner"
-	"github.com/cassielabs/httpx/internal/tui"
+	"github.com/cassielabs/hrun/internal/executor"
+	"github.com/cassielabs/hrun/internal/parser"
+	"github.com/cassielabs/hrun/internal/runner"
+	"github.com/cassielabs/hrun/internal/tui"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +21,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "httpx",
+	Use:   "hrun",
 	Short: "HTTP file runner CLI tool",
 	Long:  "A CLI tool to read and execute .http files with TUI support",
 }

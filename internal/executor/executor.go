@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cassielabs/httpx/internal/parser"
+	"github.com/cassielabs/hrun/internal/parser"
 )
 
 type Response struct {

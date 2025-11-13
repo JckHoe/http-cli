@@ -1,7 +1,7 @@
 local M = {}
 
 M.config = {
-  binary_path = "httpx",
+  binary_path = "hrun",
   timeout = 30,
   response_window = {
     width = 0.8,

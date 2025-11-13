@@ -1,4 +1,4 @@
-# httpx
+# hrun
 
 [![Build and Test](https://github.com/JckHoe/http-cli/actions/workflows/build.yml/badge.svg)](https://github.com/JckHoe/http-cli/actions/workflows/build.yml)
 [![Release](https://github.com/JckHoe/http-cli/actions/workflows/release.yml/badge.svg)](https://github.com/JckHoe/http-cli/actions/workflows/release.yml)
@@ -56,13 +56,13 @@ sudo make install
 ### Interactive TUI Mode
 
 ```bash
-httpx tui examples/sample.http
+hrun tui examples/sample.http
 ```
 
 ### Run Specific Request
 
 ```bash
-httpx run examples/sample.http --request 1
+hrun run examples/sample.http --request 1
 ```
 
 ### Update to Latest Version
