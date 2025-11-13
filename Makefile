@@ -16,8 +16,8 @@ clean:
 	go clean
 	rm -f $(BINARY_NAME)
 
-install:
-	go install $(MAIN_PATH)
+install: build
+	cp $(BINARY_NAME) $(HOME)/go/bin/$(BINARY_NAME)
 
 tui: build
 	./$(BINARY_NAME) tui examples/sample.http
