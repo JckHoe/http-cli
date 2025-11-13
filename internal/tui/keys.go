@@ -12,6 +12,8 @@ type keyMap struct {
 	Tab         key.Binding
 	Description key.Binding
 	Edit        key.Binding
+	Variables   key.Binding
+	Delete      key.Binding
 }
 
 var keys = keyMap{
@@ -50,5 +52,13 @@ var keys = keyMap{
 	Edit: key.NewBinding(
 		key.WithKeys("e"),
 		key.WithHelp("e", "edit in vim"),
+	),
+	Variables: key.NewBinding(
+		key.WithKeys("v"),
+		key.WithHelp("v", "manage variables"),
+	),
+	Delete: key.NewBinding(
+		key.WithKeys("x", "delete"),
+		key.WithHelp("x", "delete"),
 	),
 }

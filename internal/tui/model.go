@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -22,6 +23,8 @@ const (
 	stateRequestList
 	stateResponse
 	stateDescription
+	stateVariables
+	stateVariableEdit
 )
 
 type model struct {
@@ -40,6 +43,12 @@ type model struct {
 	descriptionViewport viewport.Model
 	exec               *executor.Executor
 	filePath           string
+	runtimeVariables   map[string]string
+	variableIndex      int
+	variableKeys       []string
+	editingKey         string
+	editingValue       string
+	editMode           bool
 }
 
 type responseMsg struct {
@@ -54,6 +63,7 @@ func initialModel(filePath string, timeout time.Duration) model {
 		filePath:            filePath,
 		viewport:            viewport.New(80, 20),
 		descriptionViewport: viewport.New(80, 20),
+		runtimeVariables:    make(map[string]string),
 	}
 
 	if filePath != "" {
@@ -87,6 +97,38 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		if m.state == stateVariableEdit {
+			switch msg.String() {
+			case "esc":
+				m.state = stateVariables
+				m.editMode = false
+			case "enter":
+				if m.editingKey != "" {
+					m.runtimeVariables[m.editingKey] = m.editingValue
+					m.updateVariableKeys()
+					m.state = stateVariables
+					m.editMode = false
+				}
+			case "tab":
+				m.editMode = !m.editMode
+			case "backspace":
+				if m.editMode && len(m.editingValue) > 0 {
+					m.editingValue = m.editingValue[:len(m.editingValue)-1]
+				} else if !m.editMode && len(m.editingKey) > 0 {
+					m.editingKey = m.editingKey[:len(m.editingKey)-1]
+				}
+			default:
+				if len(msg.String()) == 1 {
+					if m.editMode {
+						m.editingValue += msg.String()
+					} else {
+						m.editingKey += msg.String()
+					}
+				}
+			}
+			return m, nil
+		}
+
 		switch {
 		case key.Matches(msg, keys.Quit):
 			return m, tea.Quit
@@ -105,6 +147,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewport.ScrollUp(1)
 			case stateDescription:
 				m.descriptionViewport.ScrollUp(1)
+			case stateVariables:
+				if m.variableIndex > 0 {
+					m.variableIndex--
+				}
 			}
 
 		case key.Matches(msg, keys.Down):
@@ -121,6 +167,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewport.ScrollDown(1)
 			case stateDescription:
 				m.descriptionViewport.ScrollDown(1)
+			case stateVariables:
+				if m.variableIndex < len(m.variableKeys) {
+					m.variableIndex++
+				}
 			}
 
 		case key.Matches(msg, keys.Enter):
@@ -135,6 +185,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.state = stateResponse
 					return m, m.executeRequest(m.requests[m.requestIndex])
 				}
+			case stateVariables:
+				if m.variableIndex < len(m.variableKeys) {
+					key := m.variableKeys[m.variableIndex]
+					m.editingKey = key
+					m.editingValue = m.runtimeVariables[key]
+					m.state = stateVariableEdit
+					m.editMode = false
+				} else if m.variableIndex == len(m.variableKeys) {
+					m.editingKey = ""
+					m.editingValue = ""
+					m.state = stateVariableEdit
+					m.editMode = false
+				}
 			}
 
 		case key.Matches(msg, keys.Back):
@@ -148,6 +211,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.response = nil
 			case stateDescription:
 				m.state = stateRequestList
+			case stateVariables:
+				m.state = stateRequestList
+			case stateVariableEdit:
+				m.state = stateVariables
+				m.editMode = false
 			}
 
 		case key.Matches(msg, keys.Refresh):
@@ -169,6 +237,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, keys.Edit):
 			if m.state == stateRequestList && len(m.requests) > 0 && m.httpFile != nil {
 				return m, m.openInVim()
+			}
+
+		case key.Matches(msg, keys.Variables):
+			if m.state == stateRequestList {
+				m.updateVariableKeys()
+				m.state = stateVariables
+			}
+
+		case key.Matches(msg, keys.Delete):
+			if m.state == stateVariables && len(m.variableKeys) > 0 {
+				key := m.variableKeys[m.variableIndex]
+				delete(m.runtimeVariables, key)
+				m.updateVariableKeys()
+				if m.variableIndex >= len(m.variableKeys) && m.variableIndex > 0 {
+					m.variableIndex--
+				}
 			}
 		}
 
@@ -214,6 +298,10 @@ func (m model) View() string {
 		return m.renderResponse()
 	case stateDescription:
 		return m.renderDescription()
+	case stateVariables:
+		return m.renderVariables()
+	case stateVariableEdit:
+		return m.renderVariableEdit()
 	default:
 		return ""
 	}
@@ -274,7 +362,7 @@ func (m model) renderRequestList() string {
 		b.WriteString(listStyle.Width(m.width - 4).Render(content))
 	}
 
-	help := "↑/↓: navigate • enter: execute • d: description • e: edit • q: quit"
+	help := "↑/↓: navigate • enter: execute • d: description • e: edit • v: variables • q: quit"
 	if m.filePath == "" {
 		help += " • esc: back to files"
 	}
@@ -353,9 +441,19 @@ func (m model) loadFile(path string) tea.Cmd {
 
 func (m model) executeRequest(req parser.HTTPRequest) tea.Cmd {
 	return func() tea.Msg {
+		variables := make(map[string]string)
+
 		if m.httpFile != nil {
-			req.ApplyVariables(m.httpFile.Variables)
+			for k, v := range m.httpFile.Variables {
+				variables[k] = v
+			}
 		}
+
+		for k, v := range m.runtimeVariables {
+			variables[k] = v
+		}
+
+		req.ApplyVariables(variables)
 
 		resp, err := m.exec.Execute(req)
 		return responseMsg{
@@ -386,6 +484,82 @@ func (m model) openInVim() tea.Cmd {
 
 		return httpFile
 	})
+}
+
+func (m model) renderVariables() string {
+	var b strings.Builder
+	b.WriteString(titleStyle.Render("Runtime Variables") + "\n\n")
+
+	items := make([]string, 0)
+
+	for i, key := range m.variableKeys {
+		value := m.runtimeVariables[key]
+		source := "[runtime]"
+		if m.httpFile != nil {
+			if fileValue, isFile := m.httpFile.Variables[key]; isFile && value == fileValue {
+				source = "[file]"
+			}
+		}
+
+		line := fmt.Sprintf("%s %s = %s", source, key, value)
+		if i == m.variableIndex {
+			items = append(items, selectedItemStyle.Render("→ ")+line)
+		} else {
+			items = append(items, normalItemStyle.Render("  ")+line)
+		}
+	}
+
+	if m.variableIndex == len(m.variableKeys) {
+		items = append(items, selectedItemStyle.Render("→ [Add new variable]"))
+	} else {
+		items = append(items, normalItemStyle.Render("  [Add new variable]"))
+	}
+
+	if len(items) > 0 {
+		content := strings.Join(items, "\n")
+		b.WriteString(listStyle.Width(m.width - 4).Render(content))
+	}
+
+	b.WriteString("\n\n" + helpStyle.Render("↑/↓: navigate • enter: edit • x: delete • esc: back • q: quit"))
+	return b.String()
+}
+
+func (m model) renderVariableEdit() string {
+	var b strings.Builder
+
+	if m.editingKey == "" {
+		b.WriteString(titleStyle.Render("Add New Variable") + "\n\n")
+	} else {
+		b.WriteString(titleStyle.Render("Edit Variable") + "\n\n")
+	}
+
+	keyPrompt := "Key: "
+	if m.editMode {
+		keyPrompt += m.editingKey
+	} else {
+		keyPrompt += m.editingKey + "_"
+	}
+	b.WriteString(keyPrompt + "\n")
+
+	valuePrompt := "Value: "
+	if m.editMode {
+		valuePrompt += m.editingValue + "_"
+	} else {
+		valuePrompt += m.editingValue
+	}
+	b.WriteString(valuePrompt + "\n")
+
+	b.WriteString("\n\n" + helpStyle.Render("tab: switch field • enter: save • esc: cancel"))
+	return b.String()
+}
+
+func (m *model) updateVariableKeys() {
+	keys := make([]string, 0, len(m.runtimeVariables))
+	for k := range m.runtimeVariables {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	m.variableKeys = keys
 }
 
 func Run(filePath string, timeout time.Duration) error {

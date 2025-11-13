@@ -79,6 +79,7 @@ If an update is available, you'll be prompted to install it. Use `--force` to sk
 
 - Interactive TUI for browsing and executing HTTP requests
 - Support for `.http` file format
+- **Runtime variable management** - Set and modify variables in-memory during execution
 - Environment variable support
 - Request history and response viewing
 - Cross-platform support (macOS ARM64, Linux AMD64)
