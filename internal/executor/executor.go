@@ -2,6 +2,7 @@ package executor
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -109,13 +110,13 @@ func (e *Executor) ExecuteAll(file *parser.HTTPFile) ([]*Response, error) {
 
 func FormatResponse(resp *Response) string {
 	var buf bytes.Buffer
-	
+
 	if resp.Error != nil {
 		fmt.Fprintf(&buf, "Error: %v\n", resp.Error)
 		fmt.Fprintf(&buf, "Duration: %v\n", resp.Duration)
 		return buf.String()
 	}
-	
+
 	fmt.Fprintf(&buf, "Status: %s\n", resp.Status)
 	fmt.Fprintf(&buf, "Duration: %v\n", resp.Duration)
 	fmt.Fprintln(&buf, "\nHeaders:")
@@ -124,11 +125,26 @@ func FormatResponse(resp *Response) string {
 			fmt.Fprintf(&buf, "  %s: %s\n", key, value)
 		}
 	}
-	
+
 	if resp.Body != "" {
 		fmt.Fprintln(&buf, "\nBody:")
-		fmt.Fprintln(&buf, resp.Body)
+		formattedBody := formatBody(resp.Body, resp.Headers.Get("Content-Type"))
+		fmt.Fprintln(&buf, formattedBody)
 	}
-	
+
 	return buf.String()
+}
+
+func formatBody(body string, contentType string) string {
+	if strings.Contains(contentType, "application/json") ||
+	   strings.HasPrefix(strings.TrimSpace(body), "{") ||
+	   strings.HasPrefix(strings.TrimSpace(body), "[") {
+		var jsonData interface{}
+		if err := json.Unmarshal([]byte(body), &jsonData); err == nil {
+			if prettyJSON, err := json.MarshalIndent(jsonData, "", "  "); err == nil {
+				return string(prettyJSON)
+			}
+		}
+	}
+	return body
 }

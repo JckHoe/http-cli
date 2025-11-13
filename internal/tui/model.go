@@ -94,6 +94,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.Height = m.height - 8
 		m.descriptionViewport.Width = m.width - 4
 		m.descriptionViewport.Height = m.height - 8
+
+		if m.response != nil {
+			content := executor.FormatResponse(m.response)
+			wrapped := wrapContent(content, m.viewport.Width)
+			m.viewport.SetContent(wrapped)
+		}
 		return m, nil
 
 	case tea.KeyMsg:
@@ -273,7 +279,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.response = msg.response
 		m.err = msg.err
 		if m.response != nil {
-			m.viewport.SetContent(executor.FormatResponse(m.response))
+			content := executor.FormatResponse(m.response)
+			wrapped := wrapContent(content, m.viewport.Width)
+			m.viewport.SetContent(wrapped)
 		}
 
 	case error:
@@ -461,6 +469,32 @@ func (m model) executeRequest(req parser.HTTPRequest) tea.Cmd {
 			err:      err,
 		}
 	}
+}
+
+func wrapContent(content string, width int) string {
+	if width <= 0 {
+		return content
+	}
+
+	lines := strings.Split(content, "\n")
+	var wrappedLines []string
+
+	for _, line := range lines {
+		if len(line) <= width {
+			wrappedLines = append(wrappedLines, line)
+			continue
+		}
+
+		for len(line) > width {
+			wrappedLines = append(wrappedLines, line[:width])
+			line = line[width:]
+		}
+		if len(line) > 0 {
+			wrappedLines = append(wrappedLines, line)
+		}
+	}
+
+	return strings.Join(wrappedLines, "\n")
 }
 
 func (m model) openInVim() tea.Cmd {
