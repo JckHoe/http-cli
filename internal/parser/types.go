@@ -2,6 +2,11 @@ package parser
 
 import "net/http"
 
+type CaptureRule struct {
+	VariableName string
+	JSONPath     string
+}
+
 type HTTPRequest struct {
 	Method      string
 	URL         string
@@ -11,6 +16,7 @@ type HTTPRequest struct {
 	Description string
 	LineNumber  int
 	Variables   map[string]string
+	Captures    []CaptureRule
 }
 
 type HTTPFile struct {

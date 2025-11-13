@@ -12,6 +12,7 @@ var (
 	requestLineRegex = regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|TRACE|CONNECT)\s+(.+?)(?:\s+HTTP/[\d.]+)?$`)
 	variableRegex    = regexp.MustCompile(`\{\{(.+?)\}\}`)
 	separatorRegex   = regexp.MustCompile(`^###\s*(.*)$`)
+	captureRegex     = regexp.MustCompile(`^@capture\s+(\w+)\s*=\s*(.+)$`)
 )
 
 func ParseFile(path string) (*HTTPFile, error) {
@@ -73,7 +74,14 @@ func ParseFile(path string) (*HTTPFile, error) {
 					comment = strings.TrimSpace(strings.TrimPrefix(comment, "//"))
 				}
 				if comment != "" {
-					descriptionLines = append(descriptionLines, comment)
+					if matches := captureRegex.FindStringSubmatch(comment); len(matches) == 3 {
+						currentRequest.Captures = append(currentRequest.Captures, CaptureRule{
+							VariableName: matches[1],
+							JSONPath:     strings.TrimSpace(matches[2]),
+						})
+					} else {
+						descriptionLines = append(descriptionLines, comment)
+					}
 				}
 			}
 			continue

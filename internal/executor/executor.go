@@ -10,15 +10,17 @@ import (
 	"time"
 
 	"github.com/cassielabs/hrun/internal/parser"
+	"github.com/tidwall/gjson"
 )
 
 type Response struct {
-	StatusCode int
-	Status     string
-	Headers    http.Header
-	Body       string
-	Duration   time.Duration
-	Error      error
+	StatusCode       int
+	Status           string
+	Headers          http.Header
+	Body             string
+	Duration         time.Duration
+	Error            error
+	CapturedVariables map[string]string
 }
 
 type Executor struct {
@@ -84,18 +86,25 @@ func (e *Executor) Execute(req parser.HTTPRequest) (*Response, error) {
 		}, err
 	}
 
-	return &Response{
-		StatusCode: resp.StatusCode,
-		Status:     resp.Status,
-		Headers:    resp.Header,
-		Body:       string(body),
-		Duration:   time.Since(start),
-	}, nil
+	response := &Response{
+		StatusCode:       resp.StatusCode,
+		Status:           resp.Status,
+		Headers:          resp.Header,
+		Body:             string(body),
+		Duration:         time.Since(start),
+		CapturedVariables: make(map[string]string),
+	}
+
+	if len(req.Captures) > 0 {
+		response.CapturedVariables = applyCaptureRules(string(body), req.Captures)
+	}
+
+	return response, nil
 }
 
 func (e *Executor) ExecuteAll(file *parser.HTTPFile) ([]*Response, error) {
 	responses := make([]*Response, 0, len(file.Requests))
-	
+
 	for _, req := range file.Requests {
 		req.ApplyVariables(file.Variables)
 		resp, err := e.Execute(req)
@@ -103,8 +112,12 @@ func (e *Executor) ExecuteAll(file *parser.HTTPFile) ([]*Response, error) {
 			return responses, err
 		}
 		responses = append(responses, resp)
+
+		for varName, varValue := range resp.CapturedVariables {
+			file.Variables[varName] = varValue
+		}
 	}
-	
+
 	return responses, nil
 }
 
@@ -147,4 +160,21 @@ func formatBody(body string, contentType string) string {
 		}
 	}
 	return body
+}
+
+func applyCaptureRules(body string, captures []parser.CaptureRule) map[string]string {
+	capturedVars := make(map[string]string)
+
+	if !gjson.Valid(body) {
+		return capturedVars
+	}
+
+	for _, capture := range captures {
+		result := gjson.Get(body, capture.JSONPath)
+		if result.Exists() {
+			capturedVars[capture.VariableName] = result.String()
+		}
+	}
+
+	return capturedVars
 }

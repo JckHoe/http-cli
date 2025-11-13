@@ -34,14 +34,14 @@ func RunTests(filePath string, timeout time.Duration) error {
 
 	for i, req := range httpFile.Requests {
 		req.ApplyVariables(httpFile.Variables)
-		
+
 		testName := fmt.Sprintf("Test %d: %s %s", i+1, req.Method, req.URL)
 		if req.Name != "" {
 			testName = fmt.Sprintf("Test %d [%s]: %s %s", i+1, req.Name, req.Method, req.URL)
 		}
-		
+
 		fmt.Printf("Running %s... ", testName)
-		
+
 		resp, err := exec.Execute(req)
 		if err != nil {
 			fmt.Printf("❌ FAILED\n")
@@ -49,9 +49,16 @@ func RunTests(filePath string, timeout time.Duration) error {
 			failed++
 			continue
 		}
-		
+
+		for varName, varValue := range resp.CapturedVariables {
+			httpFile.Variables[varName] = varValue
+		}
+
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			fmt.Printf("✅ PASSED (Status: %d, Duration: %v)\n", resp.StatusCode, resp.Duration)
+			if len(resp.CapturedVariables) > 0 {
+				fmt.Printf("  Captured variables: %d\n", len(resp.CapturedVariables))
+			}
 			passed++
 		} else {
 			fmt.Printf("❌ FAILED\n")
