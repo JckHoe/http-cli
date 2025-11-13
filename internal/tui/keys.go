@@ -14,6 +14,7 @@ type keyMap struct {
 	Edit        key.Binding
 	Variables   key.Binding
 	Delete      key.Binding
+	Paste       key.Binding
 }
 
 var keys = keyMap{
@@ -60,5 +61,9 @@ var keys = keyMap{
 	Delete: key.NewBinding(
 		key.WithKeys("x", "delete"),
 		key.WithHelp("x", "delete"),
+	),
+	Paste: key.NewBinding(
+		key.WithKeys("ctrl+v"),
+		key.WithHelp("ctrl+v", "paste"),
 	),
 }

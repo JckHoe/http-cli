@@ -9,11 +9,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/cassielabs/hrun/internal/executor"
 	"github.com/cassielabs/hrun/internal/parser"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type state int
@@ -25,10 +27,12 @@ const (
 	stateDescription
 	stateVariables
 	stateVariableEdit
+	stateQuitConfirm
 )
 
 type model struct {
 	state              state
+	previousState      state
 	files              []string
 	fileIndex          int
 	httpFile           *parser.HTTPFile
@@ -49,6 +53,7 @@ type model struct {
 	editingKey         string
 	editingValue       string
 	editMode           bool
+	quitConfirmIndex   int
 }
 
 type responseMsg struct {
@@ -103,21 +108,53 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		if m.state == stateQuitConfirm {
+			switch {
+			case key.Matches(msg, keys.Up):
+				if m.quitConfirmIndex > 0 {
+					m.quitConfirmIndex--
+				}
+			case key.Matches(msg, keys.Down):
+				if m.quitConfirmIndex < 1 {
+					m.quitConfirmIndex++
+				}
+			case key.Matches(msg, keys.Enter):
+				if m.quitConfirmIndex == 0 {
+					return m, tea.Quit
+				} else {
+					m.state = m.previousState
+					m.quitConfirmIndex = 0
+				}
+			case msg.String() == "esc":
+				m.state = m.previousState
+				m.quitConfirmIndex = 0
+			}
+			return m, nil
+		}
+
 		if m.state == stateVariableEdit {
-			switch msg.String() {
-			case "esc":
+			switch {
+			case key.Matches(msg, keys.Paste):
+				if clipboardText, err := clipboard.ReadAll(); err == nil {
+					if m.editMode {
+						m.editingValue += clipboardText
+					} else {
+						m.editingKey += clipboardText
+					}
+				}
+			case msg.String() == "esc":
 				m.state = stateVariables
 				m.editMode = false
-			case "enter":
+			case msg.String() == "enter":
 				if m.editingKey != "" {
 					m.runtimeVariables[m.editingKey] = m.editingValue
 					m.updateVariableKeys()
 					m.state = stateVariables
 					m.editMode = false
 				}
-			case "tab":
+			case msg.String() == "tab":
 				m.editMode = !m.editMode
-			case "backspace":
+			case msg.String() == "backspace":
 				if m.editMode && len(m.editingValue) > 0 {
 					m.editingValue = m.editingValue[:len(m.editingValue)-1]
 				} else if !m.editMode && len(m.editingKey) > 0 {
@@ -137,7 +174,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch {
 		case key.Matches(msg, keys.Quit):
-			return m, tea.Quit
+			m.previousState = m.state
+			m.state = stateQuitConfirm
+			m.quitConfirmIndex = 0
 
 		case key.Matches(msg, keys.Up):
 			switch m.state {
@@ -297,22 +336,40 @@ func (m model) View() string {
 		return "Loading..."
 	}
 
+	var baseView string
 	switch m.state {
 	case stateFileList:
-		return m.renderFileList()
+		baseView = m.renderFileList()
 	case stateRequestList:
-		return m.renderRequestList()
+		baseView = m.renderRequestList()
 	case stateResponse:
-		return m.renderResponse()
+		baseView = m.renderResponse()
 	case stateDescription:
-		return m.renderDescription()
+		baseView = m.renderDescription()
 	case stateVariables:
-		return m.renderVariables()
+		baseView = m.renderVariables()
 	case stateVariableEdit:
-		return m.renderVariableEdit()
+		baseView = m.renderVariableEdit()
+	case stateQuitConfirm:
+		switch m.previousState {
+		case stateFileList:
+			baseView = m.renderFileList()
+		case stateRequestList:
+			baseView = m.renderRequestList()
+		case stateResponse:
+			baseView = m.renderResponse()
+		case stateDescription:
+			baseView = m.renderDescription()
+		case stateVariables:
+			baseView = m.renderVariables()
+		case stateVariableEdit:
+			baseView = m.renderVariableEdit()
+		}
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, m.renderQuitConfirm(), lipgloss.WithWhitespaceChars(" "), lipgloss.WithWhitespaceForeground(lipgloss.Color("236")))
 	default:
-		return ""
+		baseView = ""
 	}
+	return baseView
 }
 
 func (m model) renderFileList() string {
@@ -583,7 +640,7 @@ func (m model) renderVariableEdit() string {
 	}
 	b.WriteString(valuePrompt + "\n")
 
-	b.WriteString("\n\n" + helpStyle.Render("tab: switch field • enter: save • esc: cancel"))
+	b.WriteString("\n\n" + helpStyle.Render("tab: switch field • ctrl+v: paste • enter: save • esc: cancel"))
 	return b.String()
 }
 
@@ -594,6 +651,34 @@ func (m *model) updateVariableKeys() {
 	}
 	sort.Strings(keys)
 	m.variableKeys = keys
+}
+
+func (m model) renderQuitConfirm() string {
+	var b strings.Builder
+
+	b.WriteString(popupTitleStyle.Render("Quit Application?") + "\n\n")
+
+	quitOption := "  Quit"
+	cancelOption := "  Cancel"
+
+	if m.quitConfirmIndex == 0 {
+		quitOption = selectedItemStyle.Render("→ Quit")
+	} else {
+		quitOption = normalItemStyle.Render("  Quit")
+	}
+
+	if m.quitConfirmIndex == 1 {
+		cancelOption = selectedItemStyle.Render("→ Cancel")
+	} else {
+		cancelOption = normalItemStyle.Render("  Cancel")
+	}
+
+	b.WriteString(quitOption + "\n")
+	b.WriteString(cancelOption + "\n\n")
+
+	b.WriteString(popupHelpStyle.Render("↑/↓: navigate • enter: confirm • esc: cancel"))
+
+	return popupStyle.Render(b.String())
 }
 
 func Run(filePath string, timeout time.Duration) error {

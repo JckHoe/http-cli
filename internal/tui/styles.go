@@ -66,6 +66,23 @@ var (
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("63")).
 		Padding(1, 2)
+
+	popupStyle = lipgloss.NewStyle().
+		Border(lipgloss.ThickBorder()).
+		BorderForeground(lipgloss.Color("205")).
+		Padding(1, 2).
+		Width(40).
+		Align(lipgloss.Center)
+
+	popupTitleStyle = lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("205")).
+		Align(lipgloss.Center)
+
+	popupHelpStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("241")).
+		Italic(true).
+		Align(lipgloss.Center)
 )
 
 func getMethodStyle(method string) lipgloss.Style {
