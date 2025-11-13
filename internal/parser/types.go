@@ -3,12 +3,14 @@ package parser
 import "net/http"
 
 type HTTPRequest struct {
-	Method   string
-	URL      string
-	Headers  http.Header
-	Body     string
-	Name     string
-	Variables map[string]string
+	Method      string
+	URL         string
+	Headers     http.Header
+	Body        string
+	Name        string
+	Description string
+	LineNumber  int
+	Variables   map[string]string
 }
 
 type HTTPFile struct {

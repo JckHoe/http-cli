@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -20,23 +21,25 @@ const (
 	stateFileList state = iota
 	stateRequestList
 	stateResponse
+	stateDescription
 )
 
 type model struct {
-	state        state
-	files        []string
-	fileIndex    int
-	httpFile     *parser.HTTPFile
-	requests     []parser.HTTPRequest
-	requestIndex int
-	response     *executor.Response
-	loading      bool
-	err          error
-	width        int
-	height       int
-	viewport     viewport.Model
-	exec         *executor.Executor
-	filePath     string
+	state              state
+	files              []string
+	fileIndex          int
+	httpFile           *parser.HTTPFile
+	requests           []parser.HTTPRequest
+	requestIndex       int
+	response           *executor.Response
+	loading            bool
+	err                error
+	width              int
+	height             int
+	viewport           viewport.Model
+	descriptionViewport viewport.Model
+	exec               *executor.Executor
+	filePath           string
 }
 
 type responseMsg struct {
@@ -46,10 +49,11 @@ type responseMsg struct {
 
 func initialModel(filePath string, timeout time.Duration) model {
 	m := model{
-		state:    stateFileList,
-		exec:     executor.New(timeout),
-		filePath: filePath,
-		viewport: viewport.New(80, 20),
+		state:               stateFileList,
+		exec:                executor.New(timeout),
+		filePath:            filePath,
+		viewport:            viewport.New(80, 20),
+		descriptionViewport: viewport.New(80, 20),
 	}
 
 	if filePath != "" {
@@ -78,6 +82,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.viewport.Width = m.width - 4
 		m.viewport.Height = m.height - 8
+		m.descriptionViewport.Width = m.width - 4
+		m.descriptionViewport.Height = m.height - 8
 		return m, nil
 
 	case tea.KeyMsg:
@@ -97,6 +103,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case stateResponse:
 				m.viewport.ScrollUp(1)
+			case stateDescription:
+				m.descriptionViewport.ScrollUp(1)
 			}
 
 		case key.Matches(msg, keys.Down):
@@ -111,6 +119,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			case stateResponse:
 				m.viewport.ScrollDown(1)
+			case stateDescription:
+				m.descriptionViewport.ScrollDown(1)
 			}
 
 		case key.Matches(msg, keys.Enter):
@@ -136,11 +146,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case stateResponse:
 				m.state = stateRequestList
 				m.response = nil
+			case stateDescription:
+				m.state = stateRequestList
 			}
 
 		case key.Matches(msg, keys.Refresh):
 			if m.state == stateFileList {
 				return m, m.loadFiles()
+			}
+
+		case key.Matches(msg, keys.Description):
+			if m.state == stateRequestList && len(m.requests) > 0 {
+				req := m.requests[m.requestIndex]
+				content := req.Description
+				if content == "" {
+					content = "No description available for this request."
+				}
+				m.descriptionViewport.SetContent(content)
+				m.state = stateDescription
+			}
+
+		case key.Matches(msg, keys.Edit):
+			if m.state == stateRequestList && len(m.requests) > 0 && m.httpFile != nil {
+				return m, m.openInVim()
 			}
 		}
 
@@ -184,6 +212,8 @@ func (m model) View() string {
 		return m.renderRequestList()
 	case stateResponse:
 		return m.renderResponse()
+	case stateDescription:
+		return m.renderDescription()
 	default:
 		return ""
 	}
@@ -244,7 +274,7 @@ func (m model) renderRequestList() string {
 		b.WriteString(listStyle.Width(m.width - 4).Render(content))
 	}
 
-	help := "↑/↓: navigate • enter: execute • q: quit"
+	help := "↑/↓: navigate • enter: execute • d: description • e: edit • q: quit"
 	if m.filePath == "" {
 		help += " • esc: back to files"
 	}
@@ -254,7 +284,7 @@ func (m model) renderRequestList() string {
 
 func (m model) renderResponse() string {
 	var b strings.Builder
-	
+
 	req := m.requests[m.requestIndex]
 	title := fmt.Sprintf("%s %s", req.Method, req.URL)
 	if req.Name != "" {
@@ -270,6 +300,23 @@ func (m model) renderResponse() string {
 		content := m.viewport.View()
 		b.WriteString(responseStyle.Width(m.width - 4).Height(m.height - 6).Render(content))
 	}
+
+	b.WriteString("\n\n" + helpStyle.Render("↑/↓: scroll • esc: back to requests • q: quit"))
+	return b.String()
+}
+
+func (m model) renderDescription() string {
+	var b strings.Builder
+
+	req := m.requests[m.requestIndex]
+	title := "Request Description"
+	if req.Name != "" {
+		title = fmt.Sprintf("Description: %s", req.Name)
+	}
+	b.WriteString(titleStyle.Render(title) + "\n\n")
+
+	content := m.descriptionViewport.View()
+	b.WriteString(descriptionStyle.Width(m.width - 4).Height(m.height - 6).Render(content))
 
 	b.WriteString("\n\n" + helpStyle.Render("↑/↓: scroll • esc: back to requests • q: quit"))
 	return b.String()
@@ -309,13 +356,36 @@ func (m model) executeRequest(req parser.HTTPRequest) tea.Cmd {
 		if m.httpFile != nil {
 			req.ApplyVariables(m.httpFile.Variables)
 		}
-		
+
 		resp, err := m.exec.Execute(req)
 		return responseMsg{
 			response: resp,
 			err:      err,
 		}
 	}
+}
+
+func (m model) openInVim() tea.Cmd {
+	c := exec.Command("vim", fmt.Sprintf("+%d", m.requests[m.requestIndex].LineNumber), m.httpFile.Path)
+	return tea.ExecProcess(c, func(err error) tea.Msg {
+		if err != nil {
+			return err
+		}
+		httpFile, err := parser.ParseFile(m.httpFile.Path)
+		if err != nil {
+			return err
+		}
+
+		for key, value := range httpFile.Variables {
+			if envValue := os.Getenv(key); envValue != "" {
+				httpFile.Variables[key] = envValue
+			} else {
+				httpFile.Variables[key] = value
+			}
+		}
+
+		return httpFile
+	})
 }
 
 func Run(filePath string, timeout time.Duration) error {

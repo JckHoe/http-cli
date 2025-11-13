@@ -34,6 +34,7 @@ func ParseFile(path string) (*HTTPFile, error) {
 	var currentRequest *HTTPRequest
 	inBody := false
 	bodyLines := []string{}
+	descriptionLines := []string{}
 
 	for scanner.Scan() {
 		lineNum++
@@ -48,15 +49,28 @@ func ParseFile(path string) (*HTTPFile, error) {
 			}
 			match := separatorRegex.FindStringSubmatch(line)
 			currentRequest = &HTTPRequest{
-				Headers: make(http.Header),
-				Name:    strings.TrimSpace(match[1]),
+				Headers:    make(http.Header),
+				Name:       strings.TrimSpace(match[1]),
+				LineNumber: lineNum,
 			}
 			inBody = false
 			bodyLines = []string{}
+			descriptionLines = []string{}
 			continue
 		}
 
 		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
+			if currentRequest != nil && currentRequest.Method == "" {
+				comment := strings.TrimSpace(line)
+				if strings.HasPrefix(comment, "#") {
+					comment = strings.TrimSpace(strings.TrimPrefix(comment, "#"))
+				} else if strings.HasPrefix(comment, "//") {
+					comment = strings.TrimSpace(strings.TrimPrefix(comment, "//"))
+				}
+				if comment != "" {
+					descriptionLines = append(descriptionLines, comment)
+				}
+			}
 			continue
 		}
 
@@ -86,6 +100,10 @@ func ParseFile(path string) (*HTTPFile, error) {
 			matches := requestLineRegex.FindStringSubmatch(line)
 			currentRequest.Method = matches[1]
 			currentRequest.URL = matches[2]
+			if len(descriptionLines) > 0 {
+				currentRequest.Description = strings.Join(descriptionLines, " ")
+				descriptionLines = []string{}
+			}
 			continue
 		}
 
@@ -107,6 +125,10 @@ func ParseFile(path string) (*HTTPFile, error) {
 		if strings.HasPrefix(strings.TrimSpace(line), "http://") || strings.HasPrefix(strings.TrimSpace(line), "https://") {
 			currentRequest.Method = "GET"
 			currentRequest.URL = strings.TrimSpace(line)
+			if len(descriptionLines) > 0 {
+				currentRequest.Description = strings.Join(descriptionLines, " ")
+				descriptionLines = []string{}
+			}
 			continue
 		}
 	}

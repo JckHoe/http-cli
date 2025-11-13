@@ -61,6 +61,11 @@ var (
 
 	urlStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("117"))
+
+	descriptionStyle = lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("63")).
+		Padding(1, 2)
 )
 
 func getMethodStyle(method string) lipgloss.Style {
