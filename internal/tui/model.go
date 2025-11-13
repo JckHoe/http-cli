@@ -318,6 +318,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.response = msg.response
 		m.err = msg.err
 		if m.response != nil {
+			for varName, varValue := range m.response.CapturedVariables {
+				m.runtimeVariables[varName] = varValue
+			}
 			content := executor.FormatResponse(m.response)
 			wrapped := wrapContent(content, m.viewport.Width)
 			m.viewport.SetContent(wrapped)
